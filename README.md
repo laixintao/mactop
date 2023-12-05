@@ -2,6 +2,10 @@
 
 Mactop is a tool like htop, but you can decide the data you want and decide the layout. It is more like a Grafana for your macbook, but in terminal.
 
+It looks like this:
+
+![](./assets/mactop.png)
+
 ## Installation
 
 ```shell
