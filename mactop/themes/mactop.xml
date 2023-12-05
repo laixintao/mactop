@@ -1,0 +1,61 @@
+<Mactop>
+  <layout>
+    <CPUUsageBarPanel id="cpu-usage" columns="4"> </CPUUsageBarPanel>
+      <CPUTotalUsageTextPanel id="cpu-text"> </CPUTotalUsageTextPanel>
+
+      <IntelProcessorEnergyPanel label="" show_value="true"></IntelProcessorEnergyPanel>
+      <CPUFreqPanel></CPUFreqPanel>
+      <Horizontal id="battery-row">
+        <Vertical>
+          <DiskRBytesPerSSparkline></DiskRBytesPerSSparkline>
+          <DiskWBytesPerSSparkline></DiskWBytesPerSSparkline>
+          <NetworkIByteRateSparkline> </NetworkIByteRateSparkline>
+          <NetworkOByteRateSparkline> </NetworkOByteRateSparkline>
+          <SwapMemoryUsageVBar></SwapMemoryUsageVBar>
+          <MemoryUsageVBar> </MemoryUsageVBar>
+          <LoadAvgText></LoadAvgText>
+          <UptimeText></UptimeText>
+          <SensorsPanel></SensorsPanel>
+        </Vertical>
+        <BatteryPanel></BatteryPanel>
+      </Horizontal>
+
+    <Horizontal id="task-row">
+      <TaskTable></TaskTable>
+    </Horizontal>
+  </layout>
+
+  <style>
+    IntelProcessorEnergyPanel {
+      border: solid $secondary;
+    }
+    #cpu-usage {
+      margin-top: 1;
+    }
+
+    #battery-row{
+        max-height: 13;
+    }
+
+    BatteryPanel {
+        border: solid $secondary;
+        border-title-align: left;
+
+        width: 1fr;
+    }
+
+    SensorsPanel {
+        border: solid $secondary;
+        border-title-align: left;
+        height: 5;
+    }
+
+    #network-row {
+      height: 2;
+    }
+
+    #task-row {
+      height: 1fr;
+    }
+  </style>
+</Mactop>

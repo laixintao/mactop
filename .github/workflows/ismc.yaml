@@ -1,0 +1,43 @@
+name: playground
+
+env:
+  GO_VERSION: 1.18
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - "ci/*"
+
+jobs:
+  playground-ismc:
+    strategy:
+      matrix:
+        os: ["macos-13", "macos-12", "macos-11"]
+    name: run-ismc
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install iSMC
+        run: |
+          CGO_ENABLED=1 go install github.com/dkorunic/iSMC@latest
+
+      - name: Run uname
+        run: |
+          uname -a
+
+      - name: Run iSMC
+        run: |
+          ismc -o table
+
+      - name: Run powermetrics
+        run: |
+          sudo  powermetrics --sample-rate=1000 --sample-count 5
