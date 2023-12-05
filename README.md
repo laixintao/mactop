@@ -21,6 +21,14 @@ sudo mactop
 It requires `sudo` because `powermetrics` requires `sudo`, you can run `mactop`
 without `sudo` but some metrics will be missing.
 
+For M1 Macbook users, please run:
+
+```
+sudo mactop -t m1.xml
+```
+
+What is `-t` here? It's for "theme"! And you can have your own theme!
+
 ## Design Your Own Mactop
 
 We use HTML + CSS style to setup the layout.
