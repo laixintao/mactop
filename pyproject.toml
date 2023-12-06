@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mactop"
-version = "0.1.9"
+version = "0.1.10"
 description = "Htop for macbook."
 authors = ["laixintao <laixintaoo@gmail.com>"]
 readme = "README.md"
