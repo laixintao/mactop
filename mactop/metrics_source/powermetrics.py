@@ -302,9 +302,9 @@ class PowerMetricsManager:
         command = [
             "sudo",
             "powermetrics",
-            "--format=plist",
-            "--samplers=all",
-            f"--sample-rate={sample_rate}",
+            "--format plist",
+            "--samplers all",
+            f"--sample-rate {sample_rate}",
         ]
         self.process = subprocess.Popen(
             command,
