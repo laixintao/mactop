@@ -1,6 +1,7 @@
 """
 Managing the backgroud process and parse the metrics
 """
+import pathlib
 import time
 import json
 import threading
@@ -276,6 +277,7 @@ def streaming_powermetrics(stdout_fd, interval, sleep=0, debug=False):
             stdout_fd.read(1)
 
             if debug:
+                pathlib.Path(DEBUG_DUMP_LOCATION).mkdir(parents=True, exist_ok=True)
                 debug_file = (
                     f"{DEBUG_DUMP_LOCATION}/mactop_debug_{ datetime.now().strftime('%Y%m%d_%H:%M:%S')}.json"
                 )
