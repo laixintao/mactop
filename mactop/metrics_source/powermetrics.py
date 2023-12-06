@@ -299,15 +299,18 @@ class PowerMetricsManager:
         self.debug = debug
 
     def start_background_process(self):
-        logger.info("Start powermetrics process")
         sample_rate = int(self.refresh_interval_seconds * 1000)
         command = [
             "sudo",
             "powermetrics",
-            "--format plist",
-            "--samplers all",
-            f"--sample-rate {sample_rate}",
+            "--format",
+            "plist",
+            "--samplers",
+            "all",
+            "--sample-rate",
+            f"{sample_rate}",
         ]
+        logger.info("Start powermetrics process: %s", command)
         self.process = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
