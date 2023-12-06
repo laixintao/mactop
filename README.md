@@ -1,6 +1,7 @@
 # mactop
 
-Mactop is a tool like htop, but you can decide the data you want and decide the layout. It is more like a Grafana for your macbook, but in terminal.
+Mactop is a tool like htop, but you can decide the data you want and decide the
+layout. It is more like a Grafana for your macbook, but in terminal.
 
 It looks like this:
 
@@ -72,3 +73,49 @@ For examples of layouts, you can refer `mactop/themes/` directory.
 
 If you made some beautiful layout, please send it to me! By open a PR or issue,
 I can merge it into this repo, thanks.
+
+## Debug
+
+Mactop comes with verbose log support.
+
+`-v` means enable `info` log, and more `v` means more logs, max `-vvv`.
+
+```shell
+mactop -vvv -l mactop.log
+```
+
+Then you can open another terminal `tail -f mactop.log` to see the logs.
+
+Mactop use `powermetrics` to get metrics from your mactop, `powermetrics` is
+different on different Macbooks. If you met some issue, better submit a
+`powermetrics` sample in the issue, thanks.
+
+Use this command (add `--debug`), Mactop will write json formatted powermetrics
+file on your current `$(PWD)/debug_json`. (If you decide to paste it, only one
+sample (one file) is enough).
+
+```shell
+$ mactop -vvv -l mactop.log --debug
+$ ls debug_json
+mactop_debug_20231206_16:34:28.json  mactop_debug_20231206_16:41:55.json  mactop_debug_20231206_16:46:21.json
+mactop_debug_20231206_16:34:29.json  mactop_debug_20231206_16:44:46.json
+```
+
+## Development
+
+This project use [poetry]() to manage dependencies.
+
+Clone this project and make sure you have poetry.
+
+```shell
+pip install poetry
+git clone git@github.com:laixintao/mactop.git
+```
+
+Then install dependencies:
+
+```shell
+poetry install
+```
+
+You can then make changes, and test with `poetry run mactop`.
