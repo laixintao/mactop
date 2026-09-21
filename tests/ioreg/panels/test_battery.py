@@ -2,7 +2,7 @@ from mactop.panels.battery import ChargingRateDisplay
 
 
 def test_battery_changing_get_second_last():
-    b = ChargingRateDisplay()
+    b = ChargingRateDisplay(refresh_interval=1.0)
     charging_history = [
         (1693963302.615168, 3461),
         (1693963303.615168, 3469),
@@ -33,7 +33,7 @@ def test_battery_changing_get_second_last():
 
 
 def test_battery_changing_get_second_last_only_1_or_empty():
-    b = ChargingRateDisplay()
+    b = ChargingRateDisplay(refresh_interval=1.0)
     charging_history = [
         (1693963322.361393, 3519),
     ]
@@ -45,7 +45,7 @@ def test_battery_changing_get_second_last_only_1_or_empty():
 
 
 def test_battery_changing_get_second_last_only_2():
-    b = ChargingRateDisplay()
+    b = ChargingRateDisplay(refresh_interval=1.0)
     charging_history = [
         (1693963317.1332538, 3469),
         (1693963322.361393, 3519),

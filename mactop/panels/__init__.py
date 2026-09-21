@@ -12,6 +12,8 @@ from mactop.panels.disk import (
     DiskWOpsPerSSparkline,
 )
 from mactop.panels.energy import IntelProcessorEnergyPanel
+from mactop.panels.power import PowerPanel
+from mactop.panels.overview import OverviewPanel
 from mactop.panels.loadavg import LoadAvgText
 from mactop.panels.m1_cpu import M1CPUEnergyPanel
 from mactop.panels.m1_gpu import GPUFreqText, GPUUsageBarPanel, M1GPUEnergyPanel
@@ -31,6 +33,8 @@ from mactop.panels.uptime import UptimeText
 from mactop.panels.virtual_memory import MemoryStatsText, MemoryUsageVBar
 
 PANELS = {
+    "OverviewPanel": OverviewPanel,
+    "PowerPanel": PowerPanel,
     "SensorsPanel": SensorsPanel,
     "BatteryPanel": BatteryPanel,
     "TaskTable": TaskTable,

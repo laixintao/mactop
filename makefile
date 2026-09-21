@@ -1,10 +1,10 @@
-bump_patch:
-	bumpversion patch
+.PHONY: run test build
 
-bump_minor:
-	bumpversion minor
+run:
+	uv run mactop
 
-patch: bump_patch
-	rm -rf dist
-	poetry build
-	poetry publish
+test:
+	uv run pytest
+
+build:
+	uv build

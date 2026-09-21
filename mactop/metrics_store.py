@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
 import psutil
-from mactop.utils import RWLock
+import threading
 from typing import List, Tuple
 import enum
 
@@ -13,19 +13,13 @@ class ProcessorType(enum.Enum):
 
 @dataclass
 class Smc:
-    cpu_die: int | None = None
-    gpu_die: int | None = None
+    cpu_die: float | None = None
+    gpu_die: float | None = None
     fan: float | None = None
 
 
 @dataclass
-class PowerMetricsBattery:
-    plugged_in: bool | None = None
-    discharge_rate: float | None = None
-
-
-@dataclass
-class Netowrk:
+class Network:
     ipacket_rate: float | None = None
     opacket_rate: float | None = None
     ibyte_rate: float | None = None
@@ -46,8 +40,6 @@ class CPU:
 
 @dataclass
 class M1GPU:
-    gpu_energy_ma: int | None = None
-    gpu_energy_ma_history: List[float] | None = None
     idle_ratio: float | None = None
     freq_hz: float | None = None
 
@@ -69,14 +61,12 @@ class ProcessorPackage:
 class M1CPUCluster:
     name: str | None = None
     idle_ratio: float | None = None
+    freq_hz: float | None = None
     cpus: List[CPU] | None = None
 
 
 @dataclass
 class M1ProcessorPackage:
-    cpu_energy: float | None = None
-    cpu_energy_history: List[float] | None = None
-    gpu_energy: float | None = None
     clusters: List[M1CPUCluster] | None = None
 
 
@@ -92,7 +82,7 @@ class ProcessorIntel:
             if not package.cores:
                 return
             total_cores = len(package.cores)
-            if total_cores < core_index:
+            if total_cores <= core_index:
                 core_index -= total_cores
             else:
                 return package.cores[core_index]
@@ -112,16 +102,23 @@ class Disk:
 
 
 @dataclass
-class PowerMetrics:
+class HardwareMetrics:
     backlight: int | None = None
-    battery: PowerMetricsBattery = field(default_factory=PowerMetricsBattery)
     smc: Smc = field(default_factory=Smc)
+
+    # Window averages in W. Missing counters must not be represented as zero.
+    power_watts: dict[str, float | None] = field(
+        default_factory=lambda: dict.fromkeys(
+            ("cpu", "gpu", "ane", "dram", "gpu_sram", "system")
+        )
+    )
+    power_history: dict[str, List[float]] = field(default_factory=dict)
 
     tasks: List[dict] | None = None
     processor_intel: ProcessorIntel = field(default_factory=ProcessorIntel)
     processor_type: ProcessorType | None = None
 
-    network: Netowrk = field(default_factory=Netowrk)
+    network: Network = field(default_factory=Network)
     disk: Disk = field(default_factory=Disk)
 
     m1_gpu: M1GPU = field(default_factory=M1GPU)
@@ -176,39 +173,41 @@ class CPUTimesPercent:
 
 @dataclass
 class SwapMemory:
-    total_bytes: int | None = 0
-    used_bytes: int | None = 0
-    free_bytes: int | None = 0
-    percent: float | None = 0
-    sin_bytes: int | None = 0
-    sout_bytes: int | None = 0
+    total_bytes: int | None = None
+    used_bytes: int | None = None
+    free_bytes: int | None = None
+    percent: float | None = None
+    sin_bytes: int | None = None
+    sout_bytes: int | None = None
 
 
 @dataclass
 class VirtualMemory:
-    total: int | None = 0
-    available: int | None = 0
-    percent: float | None = 0
-    used: int | None = 0
-    free: int | None = 0
-    active: int | None = 0
-    inactive: int | None = 0
-    wired: int | None = 0
+    total: int | None = None
+    available: int | None = None
+    percent: float | None = None
+    used: int | None = None
+    free: int | None = None
+    active: int | None = None
+    inactive: int | None = None
+    wired: int | None = None
 
 
 @dataclass
 class LoadAvg:
-    load1: float | None = 0
-    load5: float | None = 0
-    load15: float | None = 0
+    load1: float | None = None
+    load5: float | None = None
+    load15: float | None = None
 
 
 @dataclass
 class PsutilMetrics:
     cpu_percent_percpu: List[CPUTimesPercent] | None = None
-    cpu_percent: CPUTimesPercent = field(default_factory=CPUTimesPercent)
-    cpu_count: int = psutil.cpu_count()
-    cpu_physical_count: int = psutil.cpu_count(logical=False)
+    cpu_percent: CPUTimesPercent | None = None
+    cpu_count: int = field(default_factory=lambda: psutil.cpu_count() or 1)
+    cpu_physical_count: int = field(
+        default_factory=lambda: psutil.cpu_count(logical=False) or 1
+    )
     swap_memory: SwapMemory = field(default_factory=SwapMemory)
     virtual_memory: VirtualMemory = field(default_factory=VirtualMemory)
     loadavg: LoadAvg = field(default_factory=LoadAvg)
@@ -216,35 +215,45 @@ class PsutilMetrics:
 
 
 @dataclass
-class Metrics:
-    powermetrics = PowerMetrics()
-    ioregmetrics = IORegMetrics()
-    psutilmetrics = PsutilMetrics()
+class MetricsSnapshot:
+    timestamp: float | None = None
+    hardware: HardwareMetrics = field(default_factory=HardwareMetrics)
+    system: PsutilMetrics = field(default_factory=PsutilMetrics)
+    battery: IORegMetrics = field(default_factory=IORegMetrics)
+    errors: dict[str, str] = field(default_factory=dict)
 
-    _powermetrics_rwlock = RWLock()
-    _ioreg_rwlock = RWLock()
+
+class Metrics:
+    """Publish whole snapshots; readers never see a partly updated sample."""
+
+    def __init__(self):
+        self._snapshot = MetricsSnapshot()
+        self._lock = threading.Lock()
+
+    def snapshot(self):
+        with self._lock:
+            return self._snapshot
+
+    def publish(self, snapshot):
+        with self._lock:
+            self._snapshot = snapshot
+
+    @property
+    def psutilmetrics(self):
+        return self.snapshot().system
+
+    @property
+    def ioregmetrics(self):
+        return self.snapshot().battery
 
     def get_psutilmetrics(self):
-        return self.psutilmetrics
+        return self.snapshot().system
 
-    def set_psutilmetrics(self, p: PsutilMetrics):
-        self.psutilmetrics = p
-
-    def get_powermetrics(self):
-        with self._powermetrics_rwlock.r_locked():
-            return self.powermetrics
-
-    def set_powermetrics(self, metrics):
-        with self._powermetrics_rwlock.w_locked():
-            self.ioregmetrics = metrics
+    def get_hardware(self):
+        return self.snapshot().hardware
 
     def get_ioregmetrics(self):
-        with self._ioreg_rwlock.r_locked():
-            return self.ioregmetrics
-
-    def set_ioregmetrics(self, metrics):
-        with self._ioreg_rwlock.w_locked():
-            self.ioregmetrics = metrics
+        return self.snapshot().battery
 
 
 metrics = Metrics()

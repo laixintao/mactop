@@ -47,11 +47,15 @@ class LabeledColorBar(Static):
 
     def update_percentages(self) -> None:
         result = self.percentages_update_fn()
-        if result is not None:
-            self.percentages = copy.copy(result)
+        self.percentages = copy.copy(result)
 
     def watch_percentages(self, percentages) -> None:
         if not percentages:
+            for number in self.query(".colorbar-value"):
+                number.update("N/A")
+                number.styles.width = 3
+            for bar in self.query(ColorBar):
+                bar.percentages = []
             return
 
         try:
@@ -71,4 +75,4 @@ class LabeledColorBar(Static):
     def compose(self) -> ComposeResult:
         yield Label(f"{self.prefix_label}", classes="colorbar-label")
         yield ColorBar(self.color_choices)
-        yield Static("  ", classes="colorbar-value")
+        yield Static("N/A", classes="colorbar-value")

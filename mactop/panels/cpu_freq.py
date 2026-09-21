@@ -84,7 +84,7 @@ class CPUCoreBlock(BaseStatic):
 
 
 def get_package_info(core_index):
-    pi = metrics.get_powermetrics().processor_intel
+    pi = metrics.get_hardware().processor_intel
     return pi.get_core(core_index)
 
 
@@ -107,7 +107,7 @@ class CPUFreqPanel(BaseStatic):
         w = e.size.width
         total = self.core_count
 
-        max_items = w // UNIT_WIDTH
+        max_items = max(1, w // UNIT_WIDTH)
         rows = math.ceil(total / max_items)
         cols = total // rows
 

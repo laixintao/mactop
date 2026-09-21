@@ -7,6 +7,8 @@ from ._base import BaseStatic
 
 def refresh_callback(*_):
     loadavg = metrics.get_psutilmetrics().loadavg
+    if any(value is None for value in (loadavg.load1, loadavg.load5, loadavg.load15)):
+        return None
     return f"[b]{loadavg.load1:.2f}[/b] {loadavg.load5:.2f} {loadavg.load15:.2f}"
 
 

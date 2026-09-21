@@ -45,11 +45,15 @@ class SwapMemoryInOutText(BaseStatic):
 
 def get_swap_percentages():
     swap = metrics.get_psutilmetrics().swap_memory
+    if swap.used_bytes is None or swap.free_bytes is None:
+        return None
     return [swap.used_bytes, swap.free_bytes]
 
 
 def get_swap_display(*_):
     swap = metrics.get_psutilmetrics().swap_memory
+    if swap.used_bytes is None or swap.total_bytes is None:
+        return "N/A"
     u = sizeof_fmt_plain(swap.used_bytes)
     t = sizeof_fmt_plain(swap.total_bytes)
     return f"{u}/{t}"

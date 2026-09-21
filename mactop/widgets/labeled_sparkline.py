@@ -63,11 +63,15 @@ class LabeledSparkline(Static):
 
     def update_value(self) -> None:
         result = self.update_fn()
-        if result is not None:
-            self.value = copy.copy(result)
+        self.value = copy.copy(result) if result else []
 
     def watch_value(self, value) -> None:
         if not value:
+            for number in self.query("Static.sparklineValue"):
+                number.update("N/A")
+                number.styles.width = 3
+            for chart in self.query(Sparkline):
+                chart.data = []
             return
         last = value[-1]
 
@@ -92,7 +96,7 @@ class LabeledSparkline(Static):
         else:
             Sparkline.DEFAULT_CSS = ""
             yield Sparkline(self.value, classes="sparkline-chart")
-        yield Static(" ", classes="sparklineValue")
+        yield Static("N/A", classes="sparklineValue")
 
 
 class ReversedSparklineRenderable(SparklineRenderable):

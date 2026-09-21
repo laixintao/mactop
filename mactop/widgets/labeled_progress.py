@@ -41,7 +41,7 @@ class LabelProgressWidget(Static):
         self.progress_total_update_fn = progress_total_update_fn
 
     def on_mount(self) -> None:
-        self.set_interval(INTERVAL, self.update_value)
+        self.set_interval(self.update_interval, self.update_value)
 
     def update_value(self) -> None:
         if self.progress_total_update_fn:
@@ -50,10 +50,15 @@ class LabelProgressWidget(Static):
                 self.progress_total = total
 
         result = self.update_fn()
-        if result is not None:
-            self.value = result
+        self.value = result
 
     def watch_value(self, value) -> None:
+        if value is None:
+            for number in self.query("Static.value"):
+                number.update("N/A")
+            for progress in self.query(ProgressBar):
+                progress.update(progress=0, total=self.progress_total)
+            return
         if value is not None:
             number_widget = self.query_one("Static.value")
             rendered_str = self.value_render_fn(value)
@@ -65,5 +70,10 @@ class LabelProgressWidget(Static):
 
     def compose(self) -> ComposeResult:
         yield Label(f"{self.prefix_label} ", classes="label")
-        yield ProgressBar(show_eta=False, show_percentage=False, classes="progress-bar")
-        yield Static("loading", classes="value")
+        yield ProgressBar(
+            total=self.progress_total,
+            show_eta=False,
+            show_percentage=False,
+            classes="progress-bar",
+        )
+        yield Static("N/A", classes="value")

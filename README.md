@@ -1,121 +1,196 @@
 # mactop
 
-Mactop is a tool like htop, but you can decide the data you want and decide the
-layout. It is more like a Grafana for your macbook, but in terminal.
+Mactop is a terminal dashboard for macOS. It displays CPU and GPU activity,
+power, temperatures, memory, disk and network traffic, battery health, and
+processes using metrics collected directly from macOS.
 
-It looks like this:
+![Mactop dashboard with CPU, power, memory, I/O, battery, and process cards](assets/mactop.png)
 
-![](./assets/mactop.png)
+## Quick start
 
-## Installation
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then run:
 
 ```shell
-pip install mactop
+git clone https://github.com/laixintao/mactop.git
+cd mactop
+uv sync --locked
+uv run mactop
 ```
 
-## Usage
+The project selects Python 3.10 through `.python-version`. uv manages the
+interpreter and local `.venv`; you do not need to activate the environment.
 
+Live collection requires macOS. Power and performance-state metrics primarily
+target Apple Silicon; availability on Intel Macs depends on the native counters
+and sensors exposed by the machine. Unsupported readings appear as `N/A`.
+Collection runs as your current user through Python's `ctypes` and psutil,
+without `sudo`, external metrics commands, or a Go build.
+
+## Dashboard
+
+The default layout includes:
+
+- CPU, GPU, RAM, and whole-machine power summaries.
+- Per-core CPU usage, CPU cluster frequency and activity, short power histories,
+  temperatures, and fan speed.
+- Memory, swap, load averages, uptime, disk and network rates, and battery status.
+- A process table sorted by CPU usage, with resident and virtual memory columns.
+
+Wide windows show separate cards for memory, disk, network, and battery.
+Smaller windows combine secondary readings or stack cards vertically. The
+page scrolls when the content does not fit; the process table scrolls separately.
+
+| Key | Action |
+| --- | --- |
+| `p` | Focus and reveal the process table |
+| `Home` | Return to the overview |
+| `Up` / `Down` | Scroll the overview, or move through a focused process table |
+| `j` / `k` | Scroll the overview down / up |
+| `Page Up` / `Page Down` | Move by a page in the active view |
+| `q` / `Ctrl+C` | Quit and stop sampling |
+
+The mouse wheel also scrolls the dashboard and process table.
+
+Power mini-charts scale each component's recent samples independently. Compare
+components using the watt values beside the charts. RAM usage is calculated as
+`total - available`, consistently across the summary and memory card. Process
+CPU uses 100% per fully occupied core and can exceed 100%.
+
+## Command-line usage
+
+Set the sampling interval, in seconds:
+
+```shell
+uv run mactop --refresh-interval 2
 ```
-sudo mactop
+
+The interval defaults to one second and must be a positive, finite number.
+The first published sample follows a warm-up interval so cumulative counters
+can be converted to rates.
+
+The default theme is `m1.xml` on Apple Silicon and `mactop.xml` on Intel. Both
+use the compact dashboard. Select a built-in theme or a custom XML file with
+`--theme`:
+
+```shell
+uv run mactop --theme m1.xml
+uv run mactop --theme ./my-theme.xml
 ```
 
-It requires `sudo` because `powermetrics` requires `sudo`, you can run `mactop`
-without `sudo` but some metrics will be missing.
+To emit newline-delimited JSON instead of opening the dashboard:
 
-For M1 Macbook users, please run:
-
-```
-sudo mactop -t m1.xml
+```shell
+uv run mactop --json --count 5 --refresh-interval 1
+uv run mactop --json > metrics.jsonl
 ```
 
-What is `-t` here? It's for "theme"! And you can have your own theme!
+`--count` requires `--json` and a positive integer. Omit it to stream until
+interrupted. Each line contains one snapshot with `timestamp`, `hardware`,
+`system`, `battery`, and `errors` fields. JSON uses watts, hertz, bytes, and
+bytes per second for the corresponding measurements; missing values are `null`.
 
-## Design Your Own Mactop
+See the [metrics reference](docs/metrics.md) for field names, units, calculations,
+and sampling behavior. Run `uv run mactop --help` for all options or
+`uv run mactop --version` to check the version.
 
-We use HTML + CSS style to setup the layout.
+## Custom themes
 
-You can use `id` or `class` to select the element, like this:
+Themes are XML layouts with Textual CSS in a `<style>` element. Start with a
+copy of a built-in theme to retain the default colors and spacing:
 
-```html
+```shell
+cp mactop/themes/m1.xml my-theme.xml
+uv run mactop --theme ./my-theme.xml --auto-reload
+```
+
+The application reloads when you save the theme. This is a local development
+feature; it does not deploy or publish anything.
+
+A minimal layout looks like this:
+
+```xml
 <Mactop>
   <layout>
-    <Horizontal id="row-1">
-      <SensorsPanel></SensorsPanel>
-    </Horizontal>
+    <OverviewPanel />
+    <TaskTable id="processes" />
   </layout>
-
   <style>
-    #row-1 {
-      color: red;
+    Dashboard {
+      padding: 1;
+    }
+    #processes {
+      height: 12;
+      margin-top: 1;
     }
   </style>
 </Mactop>
 ```
 
-Save your content to a file, for example, `my-theme.xml`, then run `mactop` with
-`mactop -t my-theme.xml`.
+Use `Vertical` and `Horizontal` containers to group panels. Widgets support
+`id`, `name`, and space-separated `class` or `classes` attributes. Metric panels
+also accept `refresh_interval`, which overrides their display refresh interval;
+the CLI interval still controls sampling.
 
-Components do not support inline-css, but you can set attributes on components.
+`OverviewPanel` provides the responsive summary cards, and `TaskTable` provides
+the process list. Individual panels remain available for custom layouts; for
+example, `<PowerPanel component="ane" label="ANE Power" />` shows ANE power.
+The [panel registry](mactop/panels/__init__.py) lists all supported components,
+and their constructors define additional attributes. The overview's internal
+card palette and arrangement are defined in
+[overview.py](mactop/panels/overview.py); theme CSS styles its surrounding widget.
 
-Common attributes that every components support:
+## Missing readings and diagnostics
 
-- `id`;
-- `class` or `classes`, separated by space;
-- `refresh_interval`: set this will overwrite command line arguments
-  `--refresh-interval` for that component.
+Missing, unsupported, or failed readings are `N/A` in the dashboard and `null`
+in JSON. A measured zero remains zero. A frequency can be unavailable while
+utilization is valid, such as when there is no active residency in the sample
+or no matching frequency table.
 
-For component's supported attributes and component's name, please refer to
-`mactop/panels/__init__.py` and check the source code. Please bare with me, it
-is messy for now, I am working on documentations. If you have any questions,
-feel free to open an issue.
-
-For examples of layouts, you can refer `mactop/themes/` directory.
-
-If you made some beautiful layout, please send it to me! By open a PR or issue,
-I can merge it into this repo, thanks.
-
-## Debug
-
-Mactop comes with verbose log support.
-
-`-v` means enable `info` log, and more `v` means more logs, max `-vvv`.
+Source-level errors appear in the dashboard header and JSON `errors` object.
+One unavailable source does not prevent the other sources from updating.
+Enable logging to inspect the details:
 
 ```shell
-mactop -vvv -l mactop.log
+uv run mactop -vvv --log-to mactop.log
 ```
 
-Then you can open another terminal `tail -f mactop.log` to see the logs.
+Use `tail -f mactop.log` in another terminal to follow the log. Logging is
+opt-in, and `-vvv` enables debug verbosity.
 
-Mactop use `powermetrics` to get metrics from your mactop, `powermetrics` is
-different on different Macbooks. If you met some issue, better submit a
-`powermetrics` sample in the issue, thanks.
-
-Use this command (add `--debug`), Mactop will write json formatted powermetrics
-file on your current `$(PWD)/debug_json`. (If you decide to paste it, only one
-sample (one file) is enough).
+To also save each published native snapshot under `./debug_json`:
 
 ```shell
-$ mactop -vvv -l mactop.log --debug
-$ ls debug_json
-mactop_debug_20231206_16:34:28.json  mactop_debug_20231206_16:41:55.json  mactop_debug_20231206_16:46:21.json
-mactop_debug_20231206_16:34:29.json  mactop_debug_20231206_16:44:46.json
+uv run mactop -vvv --log-to mactop.log --debug
 ```
+
+Snapshot files are named `mactop_<timestamp_ns>.json`. They contain the same
+metric structure as JSON output and can help identify unavailable channels or
+sensors.
 
 ## Development
 
-This project use [poetry]() to manage dependencies.
-
-Clone this project and make sure you have poetry.
-
-```shell
-pip install poetry
-git clone git@github.com:laixintao/mactop.git
-```
-
-Then install dependencies:
+Dependencies and build configuration live in `pyproject.toml`; `uv.lock` records
+the resolved versions. Install the runtime and development dependencies, run
+the tests, and build the package with:
 
 ```shell
-poetry install
+uv sync --locked
+uv run --locked pytest
+uv build
 ```
 
-You can then make changes, and test with `poetry run mactop`.
+Builds produce a wheel and source distribution under `dist/`. The Makefile
+provides equivalent local `run`, `test`, and `build` targets. Automated
+publishing, version tagging, and the previous powermetrics/iSMC workflow have
+been removed.
+
+The test suite covers native counter calculations, missing data, collector
+lifecycle, CLI behavior, and dashboard interaction at multiple terminal sizes.
+The metrics reference includes a [source map](docs/metrics.md#source-map) for
+contributors.
+
+## License
+
+See [LICENSE](LICENSE) for the project license and
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for native API reference
+attribution.

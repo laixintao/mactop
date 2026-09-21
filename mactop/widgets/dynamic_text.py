@@ -45,10 +45,13 @@ class DynamicText(Static):
 
     def update_value(self) -> None:
         result = self.update_fn()
-        if result is not None:
-            self.value = result
+        self.value = result
 
     def watch_value(self, value) -> None:
+        if value is None:
+            for number in self.query("Static.value"):
+                number.update("N/A")
+            return
         if value is not None:
             try:
                 number = self.query_one("Static.value")
@@ -62,4 +65,4 @@ class DynamicText(Static):
 
     def compose(self) -> ComposeResult:
         yield Label(f"{self.prefix_label}", classes="label")
-        yield Static("loading", classes="value")
+        yield Static("N/A", classes="value")

@@ -1,6 +1,3 @@
-from .powermetrics import PowerMetricsManager
-from .ioreg import IORegManager
-from .psutil_manager import PsutilManager
+from .collector import MetricsManager
 
-
-__all__ = ["PowerMetricsManager", "IORegManager", "PsutilManager"]
+__all__ = ["MetricsManager"]

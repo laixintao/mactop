@@ -16,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 def get_cpu_percentage():
     cpu_percent = metrics.get_psutilmetrics().cpu_percent
+    if cpu_percent is None:
+        return None
 
     return [
         cpu_percent.user,

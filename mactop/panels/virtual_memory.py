@@ -78,7 +78,7 @@ class MemoryStatsText(BaseStatic):
 
 def get_available_vm_percentages():
     vm = metrics.get_psutilmetrics().virtual_memory
-    if not vm.total or not vm.available:
+    if not vm.total or vm.available is None:
         return []
     return [
         vm.total - vm.available,
@@ -88,8 +88,8 @@ def get_available_vm_percentages():
 
 def get_vm_display(*_):
     vm = metrics.get_psutilmetrics().virtual_memory
-    if not vm.total or not vm.available:
-        return []
+    if not vm.total or vm.available is None:
+        return "N/A"
     in_use = vm.total - vm.available
     u = sizeof_fmt_plain(in_use)
     t = sizeof_fmt_plain(vm.total)

@@ -30,6 +30,9 @@ class ChargerDispaly(BaseStatic):
                 self.adapter = None
 
     def watch_adapter(self, adapter) -> None:
+        if self.connected is None:
+            self.update("Power source: N/A")
+            return
         if not self.connected:
             text = "⌁ "
             text += "[bold success]On battery[/]"
@@ -72,7 +75,7 @@ class BacklightDisplayText(BaseStatic):
         self.set_interval(self.refresh_interval, self.update_backlight)
 
     def update_backlight(self) -> None:
-        if (backlight := metrics.powermetrics.backlight) is not None:
+        if (backlight := metrics.get_hardware().backlight) is not None:
             self.backlight = backlight
 
     def watch_backlight(self, backlight: int) -> None:

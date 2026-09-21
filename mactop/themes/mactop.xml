@@ -1,55 +1,77 @@
 <Mactop>
   <layout>
-    <CPUUsageBarPanel id="cpu-usage" columns="4"> </CPUUsageBarPanel>
-      <CPUTotalUsageTextPanel id="cpu-text"> </CPUTotalUsageTextPanel>
-
-      <IntelProcessorEnergyPanel label="" show_value="true"></IntelProcessorEnergyPanel>
-      <CPUFreqPanel></CPUFreqPanel>
-      <Horizontal id="battery-row">
-        <Vertical>
-          <DiskRBytesPerSSparkline></DiskRBytesPerSSparkline>
-          <DiskWBytesPerSSparkline></DiskWBytesPerSSparkline>
-          <NetworkIByteRateSparkline> </NetworkIByteRateSparkline>
-          <NetworkOByteRateSparkline> </NetworkOByteRateSparkline>
-          <SwapMemoryUsageVBar></SwapMemoryUsageVBar>
-          <MemoryUsageVBar> </MemoryUsageVBar>
-          <LoadAvgText></LoadAvgText>
-          <UptimeText></UptimeText>
-        </Vertical>
-        <BatteryPanel></BatteryPanel>
-      </Horizontal>
-
-    <Horizontal id="task-row">
-      <TaskTable></TaskTable>
-    </Horizontal>
+    <OverviewPanel />
+    <TaskTable id="processes" />
   </layout>
-
   <style>
-    IntelProcessorEnergyPanel {
-      border: solid $secondary;
+    Screen {
+      background: #0e141d;
+      color: #dce5ee;
     }
-    #cpu-usage {
+    Dashboard {
+      padding: 1 1 0 1;
+      background: #0e141d;
+      scrollbar-size: 1 1;
+      scrollbar-background: #0e141d;
+      scrollbar-color: #29394b;
+      scrollbar-color-hover: #8293a7;
+      scrollbar-color-active: #75cbd3;
+    }
+    MactopHeader {
+      background: #17212d;
+      color: #dce5ee;
+    }
+    HeaderIcon { color: #75cbd3; }
+    HeaderTitle {
+      content-align: left middle;
+      text-style: bold;
+    }
+    HeaderClock {
+      background: #17212d;
+      color: #8293a7;
+    }
+    TaskTable {
       margin-top: 1;
-    }
-
-    #battery-row{
-        max-height: 13;
-    }
-
-    BatteryPanel {
-        border: solid $secondary;
-        border-title-align: left;
-
-        width: 1fr;
-    }
-
-
-    #network-row {
-      height: 2;
-    }
-
-    #task-row {
       height: 1fr;
+      min-height: 6;
+      border: round #29394b;
+      border-title-color: #8293a7;
+      border-subtitle-color: #8293a7;
+      border-title-align: left;
+      border-subtitle-align: right;
+      background: #0e141d;
+      color: #dce5ee;
+      scrollbar-size: 1 1;
+      scrollbar-gutter: stable;
+      scrollbar-background: #0e141d;
+      scrollbar-color: #29394b;
+      scrollbar-color-hover: #8293a7;
+      scrollbar-color-active: #75cbd3;
+    }
+    TaskTable > .datatable--header {
+      background: #17212d;
+      color: #8293a7;
+      text-style: none;
+    }
+    TaskTable > .datatable--even-row { background: #111b27; }
+    TaskTable > .datatable--odd-row { background: #0e141d; }
+    TaskTable > .datatable--cursor {
+      background: #243d4b;
+      color: #e5f4f5;
+    }
+    TaskTable > .datatable--hover { background: #1b2c3b; }
+    TaskTable > .datatable--header-hover { background: #1b2c3b; }
+    Footer {
+      background: #17212d;
+      color: #8293a7;
+    }
+    Footer > .footer--key {
+      background: #17212d;
+      color: #75cbd3;
+    }
+    Footer > .footer--highlight, Footer > .footer--highlight-key {
+      background: #243d4b;
+      color: #dce5ee;
     }
   </style>
 </Mactop>

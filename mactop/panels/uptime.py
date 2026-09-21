@@ -10,7 +10,7 @@ from ._base import BaseStatic
 def refresh_callback(*_):
     boot_time = metrics.get_psutilmetrics().boot_time
     if not boot_time:
-        return "  "
+        return None
     uptime_s = int(time.time() - boot_time)
     return str(timedelta(seconds=uptime_s))
 

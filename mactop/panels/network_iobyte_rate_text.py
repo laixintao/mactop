@@ -27,7 +27,7 @@ class NetworkIOByteRateText(BaseStatic):
         yield Label(self.label, classes="network-iorate-byte-prefix")
         yield DynamicText(
             prefix_label="[b]↑[/b] ",
-            update_fn=lambda: metrics.get_powermetrics().network.obyte_rate,
+            update_fn=lambda: metrics.get_hardware().network.obyte_rate,
             value_render_fn=speed_sizeof_fmt,
             classes="network-speed",
             update_interval=self.refresh_interval,
@@ -35,7 +35,7 @@ class NetworkIOByteRateText(BaseStatic):
         yield Label(" " * 5, classes="network-iorate-byte-prefix")
         yield DynamicText(
             prefix_label="[b]↓[/b] ",
-            update_fn=lambda: metrics.get_powermetrics().network.ibyte_rate,
+            update_fn=lambda: metrics.get_hardware().network.ibyte_rate,
             value_render_fn=speed_sizeof_fmt,
             classes="network-speed",
             update_interval=self.refresh_interval,

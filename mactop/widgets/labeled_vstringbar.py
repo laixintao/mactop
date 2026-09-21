@@ -46,11 +46,15 @@ class LabeledVStringBar(Static):
 
     def update_percentages(self) -> None:
         result = self.percentages_update_fn()
-        if result is not None:
-            self.percentages = copy.copy(result)
+        self.percentages = copy.copy(result)
 
     def watch_percentages(self, percentages) -> None:
         if not percentages:
+            for number in self.query("Static.colorbar-value"):
+                number.update("N/A")
+                number.styles.width = 3
+            for bar in self.query(VStringBar):
+                bar.percentages = []
             return
 
         number_widget = self.query_one("Static.colorbar-value")
@@ -64,4 +68,4 @@ class LabeledVStringBar(Static):
     def compose(self) -> ComposeResult:
         yield Label(f"{self.prefix_label} ", classes="colorbar-label")
         yield VStringBar(self.color_choices)
-        yield Static("  ", classes="colorbar-value")
+        yield Static("N/A", classes="colorbar-value")

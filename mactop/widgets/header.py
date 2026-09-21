@@ -12,12 +12,12 @@ class HeaderIcon(Widget):
     HeaderIcon {
         dock: left;
         padding: 0 1;
-        width: 8;
+        width: 3;
         content-align: left middle;
     }
     """
 
-    icon = Reactive("")
+    icon = Reactive("●")
     """The character to use as the icon within the header."""
 
     def render(self) -> RenderResult:

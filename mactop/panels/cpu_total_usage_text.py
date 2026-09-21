@@ -83,6 +83,10 @@ class CPUTotalUsageTextPanel(BaseStatic):
         return f"{percet * 100:5.2f}%"
 
     def watch_percentages(self, percentages):
+        if percentages is None:
+            for legend in self.query(Legend):
+                legend.current_value = "N/A"
+            return
         if percentages:
             try:
                 user_legend = self.query_one(".cpu-legend-user")
