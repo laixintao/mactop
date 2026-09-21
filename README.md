@@ -4,7 +4,7 @@ Mactop is a terminal dashboard for macOS. It displays CPU and GPU activity,
 power, temperatures, memory, disk and network traffic, battery health, and
 processes using metrics collected directly from macOS.
 
-![Mactop dashboard with CPU, power, memory, I/O, battery, and process cards](assets/mactop.png)
+![Mactop dashboard with CPU, power, memory, I/O, battery, and process cards](assets/mactop.jpg)
 
 ## Quick start
 
