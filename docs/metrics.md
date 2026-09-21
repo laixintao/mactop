@@ -31,7 +31,8 @@ native resources are closed when the application exits.
 
 | Metric | Source | Calculation |
 | --- | --- | --- |
-| CPU, GPU, ANE, DRAM, GPU SRAM power | IOReport `Energy Model` | Energy delta in joules divided by elapsed seconds |
+| CPU, GPU, ANE, DRAM power | IOReport `Energy Model` | Energy delta in joules divided by elapsed seconds |
+| GPU SRAM power (JSON and custom power panels) | IOReport `Energy Model` | Energy delta in joules divided by elapsed seconds |
 | GPU activity and frequency | IOReport `GPU Stats` and IORegistry frequency tables | Active residency fraction and active-time-weighted frequency |
 | CPU cluster activity and frequency | IOReport `CPU Stats` and IORegistry frequency tables | Active residency fraction and active-time-weighted frequency |
 | Per-core and total CPU activity | Mach CPU counters through psutil | Tick deltas for user, nice, system, and idle time |
@@ -98,7 +99,9 @@ transitions establish a new baseline instead of producing a negative rate.
 
 ## JSON fields and units
 
-Run `uv run mactop --json --count 1` for a complete snapshot from your machine.
+Run `uv run --locked mactop --json --count 1` from the checkout for a complete
+snapshot from your machine. With a uv tool installation, run
+`mactop --json --count 1`.
 The structure is defined by the dataclasses in
 [metrics_store.py](../mactop/metrics_store.py).
 
@@ -130,8 +133,13 @@ are the reported charger value, not a measurement of current system power.
 The dashboard converts battery temperature to °C and derives health from
 maximum capacity divided by design capacity.
 
-The `m1` field names are retained for compatibility and also carry readings
-from newer Apple Silicon hardware. Unsupported legacy fields can remain `null`.
+The `m1` field names also carry readings from newer Apple Silicon hardware.
+The current collector does not populate `hardware.backlight`,
+`hardware.processor_intel.packages`, or the per-core `cpus` fields inside Apple
+Silicon clusters. They remain `null` for compatibility with older layouts;
+they are not additional measurements. Intel-specific per-core frequency and
+C/P-state collection are not implemented. The `processor_intel.package_watts_history`
+field mirrors the CPU power history when CPU energy is available.
 
 ## Missing values and failures
 
@@ -150,7 +158,7 @@ Channel names, sensor keys, and access permissions vary by hardware and macOS
 version. For diagnostics, run:
 
 ```shell
-uv run mactop --json --count 2 -vvv --log-to mactop.log --debug
+uv run --locked mactop --json --count 2 -vvv --log-to mactop.log --debug
 ```
 
 ## Source map

@@ -1,177 +1,121 @@
 # mactop
 
-Mactop is a terminal dashboard for macOS. It displays CPU and GPU activity,
-power, temperatures, memory, disk and network traffic, battery health, and
-processes using metrics collected directly from macOS.
+A terminal system monitor for macOS, with a compact dashboard and direct access
+to native metrics.
 
-![Mactop dashboard with CPU, power, memory, I/O, battery, and process cards](assets/mactop.jpg)
+![Mactop dashboard](assets/mactop.jpg)
 
-## Quick start
+## Installation
 
-Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then run:
+You need macOS, Git, and [uv](https://docs.astral.sh/uv/getting-started/installation/).
+The current dashboard has been tested on Apple Silicon. Available power,
+frequency, temperature, and battery readings depend on the machine.
+
+### Run from source
 
 ```shell
 git clone https://github.com/laixintao/mactop.git
 cd mactop
 uv sync --locked
-uv run mactop
+uv run --locked mactop
 ```
 
-The project selects Python 3.10 through `.python-version`. uv manages the
-interpreter and local `.venv`; you do not need to activate the environment.
+Run these commands from the project directory. uv uses the Python 3.10 version
+specified in `.python-version`, downloads it if needed, and creates `.venv`.
+You do not need to activate the environment or run mactop with `sudo`.
 
-Live collection requires macOS. Power and performance-state metrics primarily
-target Apple Silicon; availability on Intel Macs depends on the native counters
-and sensors exposed by the machine. Unsupported readings appear as `N/A`.
-Collection runs as your current user through Python's `ctypes` and psutil,
-without `sudo`, external metrics commands, or a Go build.
+For an existing checkout, update it with:
 
-## Dashboard
+```shell
+git pull --ff-only
+uv sync --locked
+uv run --locked mactop
+```
 
-The default layout includes:
+### Install the `mactop` command
 
-- CPU, GPU, RAM, and whole-machine power summaries.
-- Per-core CPU usage, CPU cluster frequency and activity, short power histories,
-  temperatures, and fan speed.
-- Memory, swap, load averages, uptime, disk and network rates, and battery status.
-- A process table sorted by CPU usage, with resident and virtual memory columns.
+To run mactop from any directory, install the local checkout as a uv tool:
 
-Wide windows show separate cards for memory, disk, network, and battery.
-Smaller windows combine secondary readings or stack cards vertically. The
-page scrolls when the content does not fit; the process table scrolls separately.
+```shell
+# Run inside the cloned mactop directory.
+uv tool install --python 3.10 .
+mactop
+```
+
+If your shell cannot find the command, run `uv tool update-shell` and open a new
+terminal. Tool installation uses a separate environment and resolves dependencies
+from `pyproject.toml`; running from source uses the versions in `uv.lock`.
+
+After updating the checkout, reinstall with `uv tool install --python 3.10 --force .`.
+To remove the installed command, run `uv tool uninstall mactop`.
+
+The examples below use `uv run --locked mactop` from the checkout. If you installed
+the tool, use `mactop` with the same arguments.
+
+## What it shows
+
+- Total and per-core CPU usage, plus available Apple Silicon cluster frequencies.
+- GPU usage and frequency, and CPU, GPU, ANE, DRAM, and whole-machine power.
+- CPU/GPU temperatures and fan speed, where sensors are available.
+- RAM, swap, load averages, uptime, and disk/network rates.
+- Battery charge, charging state, health, cycle count, temperature, and adapter watts.
+- Processes sorted by CPU usage, with resident and virtual memory.
+
+The layout adapts to the terminal width. Smaller windows combine or stack cards,
+and the page scrolls when needed. Missing readings show `N/A`; a measured zero
+is displayed as zero. Power charts scale each component independently, so use
+the watt values to compare components. Process CPU can exceed 100% when a process
+uses multiple cores.
+
+## Usage
+
+The refresh interval defaults to one second. Change it with `-r`:
+
+```shell
+uv run --locked mactop -r 2
+```
 
 | Key | Action |
 | --- | --- |
-| `p` | Focus and reveal the process table |
+| `p` | Focus the process table |
 | `Home` | Return to the overview |
-| `Up` / `Down` | Scroll the overview, or move through a focused process table |
-| `j` / `k` | Scroll the overview down / up |
+| `Up` / `Down` | Scroll the page or move through the focused process table |
+| `j` / `k` | Scroll the page down / up |
 | `Page Up` / `Page Down` | Move by a page in the active view |
-| `q` / `Ctrl+C` | Quit and stop sampling |
+| `q` / `Ctrl+C` | Quit |
 
-The mouse wheel also scrolls the dashboard and process table.
+The mouse wheel also scrolls the page and process table.
 
-Power mini-charts scale each component's recent samples independently. Compare
-components using the watt values beside the charts. RAM usage is calculated as
-`total - available`, consistently across the summary and memory card. Process
-CPU uses 100% per fully occupied core and can exceed 100%.
-
-## Command-line usage
-
-Set the sampling interval, in seconds:
+### JSON output
 
 ```shell
-uv run mactop --refresh-interval 2
+uv run --locked mactop --json --count 5
+uv run --locked mactop --json > metrics.jsonl
 ```
 
-The interval defaults to one second and must be a positive, finite number.
-The first published sample follows a warm-up interval so cumulative counters
-can be converted to rates.
+Each line is a JSON snapshot. Omit `--count` to stream until interrupted.
+`--count` requires `--json`; the first sample follows a warm-up interval.
+Missing readings are `null`. See the [metrics reference](docs/metrics.md) for
+sources, calculations, fields, and units.
 
-The default theme is `m1.xml` on Apple Silicon and `mactop.xml` on Intel. Both
-use the compact dashboard. Select a built-in theme or a custom XML file with
-`--theme`:
+### Layout files
+
+`--theme` selects an XML layout. Both bundled files, `m1.xml` and `mactop.xml`,
+currently use the same dashboard layout. For editing layouts and reloading them
+while the app runs, see [Custom layouts](docs/layouts.md).
+
+### Diagnostics
 
 ```shell
-uv run mactop --theme m1.xml
-uv run mactop --theme ./my-theme.xml
+uv run --locked mactop -vvv --log-to mactop.log
+uv run --locked mactop --json --count 2 --debug
 ```
 
-To emit newline-delimited JSON instead of opening the dashboard:
-
-```shell
-uv run mactop --json --count 5 --refresh-interval 1
-uv run mactop --json > metrics.jsonl
-```
-
-`--count` requires `--json` and a positive integer. Omit it to stream until
-interrupted. Each line contains one snapshot with `timestamp`, `hardware`,
-`system`, `battery`, and `errors` fields. JSON uses watts, hertz, bytes, and
-bytes per second for the corresponding measurements; missing values are `null`.
-
-See the [metrics reference](docs/metrics.md) for field names, units, calculations,
-and sampling behavior. Run `uv run mactop --help` for all options or
-`uv run mactop --version` to check the version.
-
-## Custom themes
-
-Themes are XML layouts with Textual CSS in a `<style>` element. Start with a
-copy of a built-in theme to retain the default colors and spacing:
-
-```shell
-cp mactop/themes/m1.xml my-theme.xml
-uv run mactop --theme ./my-theme.xml --auto-reload
-```
-
-The application reloads when you save the theme. This is a local development
-feature; it does not deploy or publish anything.
-
-A minimal layout looks like this:
-
-```xml
-<Mactop>
-  <layout>
-    <OverviewPanel />
-    <TaskTable id="processes" />
-  </layout>
-  <style>
-    Dashboard {
-      padding: 1;
-    }
-    #processes {
-      height: 12;
-      margin-top: 1;
-    }
-  </style>
-</Mactop>
-```
-
-Use `Vertical` and `Horizontal` containers to group panels. Widgets support
-`id`, `name`, and space-separated `class` or `classes` attributes. Metric panels
-also accept `refresh_interval`, which overrides their display refresh interval;
-the CLI interval still controls sampling.
-
-`OverviewPanel` provides the responsive summary cards, and `TaskTable` provides
-the process list. Individual panels remain available for custom layouts; for
-example, `<PowerPanel component="ane" label="ANE Power" />` shows ANE power.
-The [panel registry](mactop/panels/__init__.py) lists all supported components,
-and their constructors define additional attributes. The overview's internal
-card palette and arrangement are defined in
-[overview.py](mactop/panels/overview.py); theme CSS styles its surrounding widget.
-
-## Missing readings and diagnostics
-
-Missing, unsupported, or failed readings are `N/A` in the dashboard and `null`
-in JSON. A measured zero remains zero. A frequency can be unavailable while
-utilization is valid, such as when there is no active residency in the sample
-or no matching frequency table.
-
-Source-level errors appear in the dashboard header and JSON `errors` object.
-One unavailable source does not prevent the other sources from updating.
-Enable logging to inspect the details:
-
-```shell
-uv run mactop -vvv --log-to mactop.log
-```
-
-Use `tail -f mactop.log` in another terminal to follow the log. Logging is
-opt-in, and `-vvv` enables debug verbosity.
-
-To also save each published native snapshot under `./debug_json`:
-
-```shell
-uv run mactop -vvv --log-to mactop.log --debug
-```
-
-Snapshot files are named `mactop_<timestamp_ns>.json`. They contain the same
-metric structure as JSON output and can help identify unavailable channels or
-sensors.
+Logging is enabled by `--log-to`; `-vvv` selects debug verbosity. `--debug` saves
+snapshots under `./debug_json`. Source errors appear in the UI header and the
+JSON `errors` object. Use `uv run --locked mactop --help` for all CLI options.
 
 ## Development
-
-Dependencies and build configuration live in `pyproject.toml`; `uv.lock` records
-the resolved versions. Install the runtime and development dependencies, run
-the tests, and build the package with:
 
 ```shell
 uv sync --locked
@@ -179,18 +123,10 @@ uv run --locked pytest
 uv build
 ```
 
-Builds produce a wheel and source distribution under `dist/`. The Makefile
-provides equivalent local `run`, `test`, and `build` targets. Automated
-publishing, version tagging, and the previous powermetrics/iSMC workflow have
-been removed.
-
-The test suite covers native counter calculations, missing data, collector
-lifecycle, CLI behavior, and dashboard interaction at multiple terminal sizes.
-The metrics reference includes a [source map](docs/metrics.md#source-map) for
-contributors.
+Build artifacts are written to `dist/`. The Makefile provides `run`, `test`, and
+`build` targets. See the [source map](docs/metrics.md#source-map) for the collector
+and UI modules.
 
 ## License
 
-See [LICENSE](LICENSE) for the project license and
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for native API reference
-attribution.
+See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
